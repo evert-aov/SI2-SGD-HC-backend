@@ -1,0 +1,77 @@
+package com.sgd_hc.sgd_hc.module_users.mapper;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Component;
+
+import com.sgd_hc.sgd_hc.module_users.dto.UserCreateDto;
+import com.sgd_hc.sgd_hc.module_users.dto.UserResponseDto;
+import com.sgd_hc.sgd_hc.module_users.dto.UserUpdateDto;
+import com.sgd_hc.sgd_hc.module_users.entity.Role;
+import com.sgd_hc.sgd_hc.module_users.entity.User;
+
+@Component
+public class UserMapper {
+
+    /**
+     * Convierte un UserCreateDto a una entidad User, asignando los roles correspondientes.
+     * @param dto El DTO que contiene los datos para crear el usuario.
+     * @param roles Los roles a asignar al usuario.
+     * @return La entidad User creada.
+     */
+    public User toEntity(UserCreateDto dto, Set<Role> roles) {
+        return User.builder()
+                .ci(dto.ci())
+                .email(dto.email())
+                .firstName(dto.firstName())
+                .lastName(dto.lastName())
+                .password(dto.password())
+                .roles(roles != null ? roles : new HashSet<>()) // Asigna los roles que le pasaron
+                .build();
+    }
+
+    /**
+     * Actualiza una entidad User existente con los datos de un UserUpdateDto, incluyendo la actualización de roles.
+     * @param dto El DTO que contiene los nuevos datos para actualizar el usuario.
+     * @param existingUser La entidad User existente que se va a actualizar.
+     * @param roles Los nuevos roles a asignar al usuario (puede ser null para mantener los roles actuales).
+     */
+    public void updateEntityFromDto(UserUpdateDto dto, User existingUser, Set<Role> roles) {
+        existingUser.setCi(dto.ci());
+        existingUser.setEmail(dto.email());
+        existingUser.setFirstName(dto.firstName());
+        existingUser.setLastName(dto.lastName());
+        existingUser.setPassword(dto.password());
+        existingUser.setIsActive(dto.isActive());
+
+        if (roles != null)
+            existingUser.setRoles(roles);
+        else
+            existingUser.getRoles().clear();
+
+    }
+
+    /**
+     * Convierte una entidad User a un UserResponseDto.
+     * @param entity La entidad User a convertir.
+     * @return El DTO con la información del usuario.
+     */
+    public UserResponseDto toResponseDto(User entity) {
+        Set<Long> roleIds = entity.getRoles() != null
+                ? entity.getRoles().stream()
+                        .map(Role::getId)
+                        .collect(Collectors.toSet())
+                : new HashSet<>();
+
+        return new UserResponseDto(
+                entity.getId(),
+                entity.getCi(),
+                entity.getEmail(),
+                entity.getFirstName(),
+                entity.getLastName(),
+                entity.getIsActive(),
+                roleIds);
+    }
+}
