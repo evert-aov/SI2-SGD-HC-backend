@@ -1,13 +1,17 @@
 -- V1__create_module_users.sql
-
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    ci VARCHAR(10) NOT NULL UNIQUE,
-    first_name VARCHAR(100) NOT NULL, 
+    username VARCHAR(50) UNIQUE NOT NULL,
+
+    document_type VARCHAR(20),
+    document_number VARCHAR(50),
+
+    email VARCHAR(100) UNIQUE NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    phone VARCHAR(20)
 );
 
 CREATE TABLE IF NOT EXISTS roles (
