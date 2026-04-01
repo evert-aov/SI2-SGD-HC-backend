@@ -23,11 +23,15 @@ public class UserMapper {
      */
     public User toEntity(UserCreateDto dto, Set<Role> roles) {
         return User.builder()
-                .ci(dto.ci())
+                .documentType(dto.documentType())
+                .documentNumber(dto.documentNumber())
                 .email(dto.email())
                 .firstName(dto.firstName())
                 .lastName(dto.lastName())
                 .password(dto.password())
+                .phone(dto.phone())
+                .gender(dto.gender())
+
                 .roles(roles != null ? roles : new HashSet<>()) // Asigna los roles que le pasaron
                 .build();
     }
@@ -39,8 +43,8 @@ public class UserMapper {
      * @param roles Los nuevos roles a asignar al usuario (puede ser null para mantener los roles actuales).
      */
     public void updateEntityFromDto(UserUpdateDto dto, User existingUser, Set<Role> roles) {
-        existingUser.setCi(dto.ci());
-        existingUser.setEmail(dto.email());
+        existingUser.setDocumentType(dto.documentType());
+        existingUser.setDocumentNumber(dto.documentNumber());
         existingUser.setFirstName(dto.firstName());
         existingUser.setLastName(dto.lastName());
         existingUser.setPassword(dto.password());
@@ -67,11 +71,15 @@ public class UserMapper {
 
         return new UserResponseDto(
                 entity.getId(),
-                entity.getCi(),
+                entity.getUsername(),
+                entity.getDocumentType(),
+                entity.getDocumentNumber(),
                 entity.getEmail(),
                 entity.getFirstName(),
                 entity.getLastName(),
+                entity.getPhone(),
                 entity.getIsActive(),
+                entity.getGender(),
                 roleIds);
     }
 }
