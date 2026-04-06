@@ -5,6 +5,7 @@ import com.sgd_hc.sgd_hc.module_users.repository.UserRepository;
 import com.sgd_hc.sgd_hc.security.dto.AuthRequestDto;
 import com.sgd_hc.sgd_hc.security.dto.AuthResponseDto;
 import com.sgd_hc.sgd_hc.security.dto.RefreshTokenRequestDto;
+import com.sgd_hc.sgd_hc.security.details.SecurityUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -28,10 +29,11 @@ public class AuthService {
         );
 
         User user = userRepository.findByUsername(requestDto.username())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found" + requestDto.username()));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + requestDto.username()));
 
-        String accessToken = jwtService.generateAccessToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
+        SecurityUser securityUser = new SecurityUser(user);
+        String accessToken = jwtService.generateAccessToken(securityUser);
+        String refreshToken = jwtService.generateRefreshToken(securityUser);
 
         return new AuthResponseDto(accessToken, refreshToken, jwtService.getJwtExpiration());
     }
@@ -39,14 +41,15 @@ public class AuthService {
     public AuthResponseDto refreshToken(RefreshTokenRequestDto requestDto) {
         String username = jwtService.extractUsername(requestDto.refreshToken());
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found" + username));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        if (!jwtService.isTokenValid(requestDto.refreshToken(), user)) {
+        SecurityUser securityUser = new SecurityUser(user);
+        if (!jwtService.isTokenValid(requestDto.refreshToken(), securityUser)) {
             throw new IllegalArgumentException("Invalid or expired refresh token");
         }
 
-        String newAccessToken = jwtService.generateAccessToken(user);
-        String newRefreshToken = jwtService.generateRefreshToken(user);
+        String newAccessToken = jwtService.generateAccessToken(securityUser);
+        String newRefreshToken = jwtService.generateRefreshToken(securityUser);
 
         return new AuthResponseDto(newAccessToken, newRefreshToken, jwtService.getJwtExpiration());
     }
