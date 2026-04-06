@@ -1,5 +1,5 @@
 -- V1__create_module_users.sql
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
 
@@ -36,10 +36,10 @@ CREATE TABLE IF NOT EXISTS permissions (
     action VARCHAR(50) NOT NULL UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS role_permissions (
+CREATE TABLE IF NOT EXISTS role_permission (
     role_id BIGINT NOT NULL,
     permission_id BIGINT NOT NULL,
     PRIMARY KEY (role_id, permission_id),
-    CONSTRAINT fk_role_permissions_role_id FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
-    CONSTRAINT fk_role_permissions_perm_id FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+    CONSTRAINT fk_role_permission_role_id FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+    CONSTRAINT fk_role_permission_perm_id FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
 );
