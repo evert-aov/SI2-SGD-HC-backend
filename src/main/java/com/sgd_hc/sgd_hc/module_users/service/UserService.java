@@ -93,7 +93,7 @@ public class UserService {
                 .toList();
     }
 
-    /**
+    /**.map(userMapper::toResponseDt
      * Actualiza la información de un usuario existente a partir de un DTO de actualización.
      *
      * @param id El ID del usuario que se desea actualizar.
@@ -115,6 +115,9 @@ public class UserService {
 
         // Actualizar la entidad existente con los nuevos datos del DTO, incluyendo los roles
         userMapper.updateEntityFromDto(dto, existingUser, roles);
+
+        if (dto.password() != null && !dto.password().isBlank())
+            existingUser.setPassword(passwordEncoder.encode(dto.password()));
 
         // Guardar los cambios en la base de datos y convertir el usuario actualizado a DTO de respuesta
         User savedUser = userRepository.save(existingUser);
