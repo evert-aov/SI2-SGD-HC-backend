@@ -104,7 +104,7 @@ public class DataInitializer implements ApplicationRunner {
         User user = userRepository.findByUsername(username).orElse(null);
         if (user != null) {
             log.info(">>> Actualizando roles para el usuario: {}", username);
-            user.setRoles(Set.of(role));
+            user.setRoles(new HashSet<>(Set.of(role)));
             // Sincronizamos campos extra si faltan
             if (user.getDocumentNumber() == null) {
                 user.setDocumentType(docType);
@@ -123,7 +123,7 @@ public class DataInitializer implements ApplicationRunner {
                     .documentNumber(docNum)
                     .gender("M")
                     .isActive(true)
-                    .roles(Set.of(role))
+                    .roles(new HashSet<>(Set.of(role)))
                     .build());
         }
     }
