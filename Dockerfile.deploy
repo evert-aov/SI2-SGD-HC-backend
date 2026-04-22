@@ -1,0 +1,50 @@
+# Stage 1: Build the application with Gradle
+FROM eclipse-temurin:26-jdk-alpine AS builder
+WORKDIR /build
+
+# Copy gradle executable and configuration to cache dependencies first
+COPY gradle/ gradle/
+COPY gradlew settings.gradle build.gradle ./
+RUN chmod +x gradlew && ./gradlew --no-daemon dependencies
+
+# Copy source and build the JAR
+COPY src ./src
+RUN ./gradlew bootJar --no-daemon -x test
+
+# Stage 2: Extract layers from the JAR
+FROM eclipse-temurin:26-jre-alpine AS layers
+WORKDIR /extract
+COPY --from=builder /build/build/libs/*.jar app.jar
+RUN java -Djarmode=layertools -jar app.jar extract
+
+# Stage 3: Professional runtime image
+FROM eclipse-temurin:26-jre-alpine
+WORKDIR /app
+
+# Non-root user for security
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring
+
+# Copy layers from the stages above
+# Layers are copied in order from most stable to most volatile
+COPY --from=layers /extract/dependencies/ ./
+COPY --from=layers /extract/spring-boot-loader/ ./
+COPY --from=layers /extract/snapshot-dependencies/ ./
+COPY --from=layers /extract/application/ ./
+
+# Environment configuration
+ENV JAVA_OPTS="-XX:+UseSerialGC -Xms256m -Xmx512m -XX:MaxRAMPercentage=75.0 -Duser.timezone=UTC"
+ENV PORT=8080
+EXPOSE 8080
+
+# Railway Entrypoint: Logic to parse DATABASE_URL (PostgreSQL) into Spring properties
+ENTRYPOINT ["sh", "-c", " \
+    if [ -n \"$DATABASE_URL\" ]; then \
+        URL_WITHOUT_PROTO=\"${DATABASE_URL#*://}\"; \
+        DB_CREDS=\"${URL_WITHOUT_PROTO%@*}\"; \
+        HOST_DB=\"${URL_WITHOUT_PROTO#*@}\"; \
+        export DB_URL=\"jdbc:postgresql://${HOST_DB%/*}/${HOST_DB##*/}\"; \
+        export DB_USERNAME=\"${DB_CREDS%:*}\"; \
+        export DB_PASSWORD=\"${DB_CREDS#*:}\"; \
+    fi; \
+    exec java $JAVA_OPTS -Dserver.port=${PORT:-8080} org.springframework.boot.loader.launch.JarLauncher"]
