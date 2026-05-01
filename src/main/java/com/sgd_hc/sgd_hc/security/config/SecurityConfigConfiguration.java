@@ -31,7 +31,9 @@ public class SecurityConfigConfiguration {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Value("${app.cors.allowed-origins:http://localhost:4200,http://localhost:8080}")
+    //@Value("${app.cors.allowed-origins:http://localhost:4200,http://localhost:8080}")
+    
+    @Value("${app.cors.allowed-origins:https://calm-wave-000d39410.7.azurestaticapps.net,https://calm-wave-000d39410.7.azurestaticapps.net}")
     private List<String> allowedOrigins;
 
     private static final String[] PUBLIC_URLS = {
