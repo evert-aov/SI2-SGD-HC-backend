@@ -23,37 +23,17 @@ WORKDIR /app
 
 # Non-root user for security
 RUN addgroup -S spring && adduser -S spring -G spring
+
+# Copy layers from the stages above with correct ownership
+COPY --from=layers --chown=spring:spring /extract/dependencies/ ./
+COPY --from=layers --chown=spring:spring /extract/spring-boot-loader/ ./
+COPY --from=layers --chown=spring:spring /extract/snapshot-dependencies/ ./
+COPY --from=layers --chown=spring:spring /extract/application/ ./
+
 USER spring
 
-# Copy layers from the stages above
-COPY --from=layers /extract/dependencies/ ./
-COPY --from=layers /extract/spring-boot-loader/ ./
-COPY --from=layers /extract/snapshot-dependencies/ ./
-COPY --from=layers /extract/application/ ./
+# Configuración de memoria adaptada para Cloud Run
+ENV JAVA_OPTS="-XX:+UseParallelGC -Xms256m -Xmx512m -XX:MaxRAMPercentage=75.0 -Duser.timezone=America/La_Paz -Djava.net.preferIPv4Stack=true"
 
-# Environment configuration
-ENV JAVA_OPTS="-XX:+UseSerialGC -Xms256m -Xmx512m -XX:MaxRAMPercentage=75.0 -Duser.timezone=UTC"
-ENV PORT=8080
-EXPOSE 8080
-
-# Entrypoint con depuración y server.address forzado
-ENTRYPOINT ["sh", "-c", " \
-    set -e; \
-    echo '=== Iniciando contenedor (Java 26) ==='; \
-    echo \"PORT: ${PORT:-8080}\"; \
-    if [ -n \"$DATABASE_URL\" ]; then \
-        echo 'Parseando DATABASE_URL...'; \
-        URL_WITHOUT_PROTO=\"${DATABASE_URL#*://}\"; \
-        DB_CREDS=\"${URL_WITHOUT_PROTO%@*}\"; \
-        HOST_DB=\"${URL_WITHOUT_PROTO#*@}\"; \
-        export DB_URL=\"jdbc:postgresql://${HOST_DB%/*}/${HOST_DB##*/}\"; \
-        export DB_USERNAME=\"${DB_CREDS%:*}\"; \
-        export DB_PASSWORD=\"${DB_CREDS#*:}\"; \
-        echo \"DB_URL: $DB_URL\"; \
-        echo \"DB_USERNAME: $DB_USERNAME\"; \
-        echo \"DB_PASSWORD: [OCULTA]\"; \
-    else \
-        echo 'ADVERTENCIA: DATABASE_URL no está definida.'; \
-    fi; \
-    echo 'Iniciando aplicación Spring Boot...'; \
-    exec java $JAVA_OPTS -Dserver.port=${PORT:-8080} -Dserver.address=0.0.0.0 org.springframework.boot.loader.launch.JarLauncher"]
+# Entrypoint limpio de Cloud Run. Usa la variable $PORT que inyecta Google (por defecto 8080)
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dserver.port=${PORT:-8080} org.springframework.boot.loader.launch.JarLauncher"]
