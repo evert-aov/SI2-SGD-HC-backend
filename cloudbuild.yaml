@@ -1,0 +1,41 @@
+steps:
+  # 1. Construir la imagen Docker
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/github.com/informationsystem2/si2-sgd-hc-backend:$COMMIT_SHA"
+      - "-f"
+      - "Dockerfile.deploy"
+      - "."
+
+  # 2. Subir la imagen a Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "gcr.io/$PROJECT_ID/github.com/informationsystem2/si2-sgd-hc-backend:$COMMIT_SHA"
+    
+  # 3. Desplegar en Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "si2-sgd-hc-backend"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/github.com/informationsystem2/si2-sgd-hc-backend:$COMMIT_SHA"
+      - "--region"
+      - "us-east4" 
+      - "--platform"
+      - "managed"
+      - "--allow-unauthenticated"
+      - "--min-instances=0"
+      - "--max-instances=5"
+      - "--port=8080"
+      - "--quiet"
+
+images:
+  - "gcr.io/$PROJECT_ID/github.com/informationsystem2/si2-sgd-hc-backend:$COMMIT_SHA"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
