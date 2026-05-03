@@ -4,6 +4,7 @@ import com.sgd_hc.sgd_hc.security.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
