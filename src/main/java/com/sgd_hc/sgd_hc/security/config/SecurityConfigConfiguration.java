@@ -32,7 +32,7 @@ public class SecurityConfigConfiguration {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Value("${app.cors.allowed-origins}")
-    private List<String> allowedOrigins;
+    private String allowedOrigins;
 
     private static final String[] PUBLIC_URLS = {
             "/api/auth/**",
