@@ -12,6 +12,7 @@ import com.sgd_hc.patients.dto.PatientUpdateDto;
 import com.sgd_hc.patients.entity.Patient;
 import com.sgd_hc.patients.mapper.PatientMapper;
 import com.sgd_hc.patients.repository.PatientRepository;
+import com.sgd_hc.tenants.service.TenantResolverService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,12 +20,14 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PatientService {
 
-    private final PatientRepository patientRepository;
-    private final PatientMapper     patientMapper;
+    private final PatientRepository    patientRepository;
+    private final PatientMapper        patientMapper;
+    private final TenantResolverService tenantResolverService;
 
     @Transactional
     public PatientResponseDto createPatient(PatientCreateDto dto) {
         Patient patient = patientMapper.toEntity(dto);
+        patient.setTenant(tenantResolverService.resolve());
         return patientMapper.toResponseDto(patientRepository.save(patient));
     }
 

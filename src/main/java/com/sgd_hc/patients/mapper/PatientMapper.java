@@ -1,8 +1,5 @@
 package com.sgd_hc.patients.mapper;
 
-import java.time.ZoneId;
-import java.util.Date;
-
 import org.springframework.stereotype.Component;
 
 import com.sgd_hc.patients.dto.PatientCreateDto;
@@ -16,6 +13,8 @@ import com.sgd_hc.users.entity.DocumentType;
 public class PatientMapper {
 
     public Patient toEntity(PatientCreateDto dto) {
+        if (dto.gender() == null || dto.gender().isBlank())
+            throw new IllegalArgumentException("El género es requerido");
         Patient patient = new Patient();
         patient.setDocumentType(dto.documentType() != null ? DocumentType.valueOf(dto.documentType()) : DocumentType.CI);
         patient.setDocumentNumber(dto.documentNumber());
@@ -24,8 +23,7 @@ public class PatientMapper {
         patient.setPhone(dto.phone());
         patient.setAddress(dto.address());
         patient.setGender(Gender.valueOf(dto.gender()));
-        if (dto.birthDate() != null)
-            patient.setBirthDate(Date.from(dto.birthDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        patient.setBirthDate(dto.birthDate());
         return patient;
     }
 
@@ -37,8 +35,7 @@ public class PatientMapper {
         if (dto.phone() != null) patient.setPhone(dto.phone());
         if (dto.address() != null) patient.setAddress(dto.address());
         if (dto.gender() != null) patient.setGender(Gender.valueOf(dto.gender()));
-        if (dto.birthDate() != null)
-            patient.setBirthDate(Date.from(dto.birthDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
+        if (dto.birthDate() != null) patient.setBirthDate(dto.birthDate());
     }
 
     public PatientResponseDto toResponseDto(Patient patient) {
@@ -51,9 +48,7 @@ public class PatientMapper {
                 .phone(patient.getPhone())
                 .address(patient.getAddress())
                 .gender(patient.getGender() != null ? patient.getGender().name() : null)
-                .birthDate(patient.getBirthDate() != null
-                        ? patient.getBirthDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                        : null)
+                .birthDate(patient.getBirthDate())
                 .build();
     }
 }

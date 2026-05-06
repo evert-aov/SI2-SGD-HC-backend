@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgd_hc.tenants.service.TenantResolverService;
 import com.sgd_hc.users.dto.RoleCreateDto;
 import com.sgd_hc.users.dto.RoleResponseDto;
 import com.sgd_hc.users.dto.RoleUpdateDto;
@@ -23,15 +24,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RoleService {
 
-    private final RoleRepository roleRepository;
-    private final PermissionRepository permissionRepository;
-    private final RoleMapper roleMapper;
+    private final RoleRepository        roleRepository;
+    private final PermissionRepository  permissionRepository;
+    private final RoleMapper            roleMapper;
+    private final TenantResolverService tenantResolverService;
 
     @Transactional
     public RoleResponseDto createRole(RoleCreateDto dto) {
         validateNameUniqueness(dto.name(), null);
         Set<Permission> permissions = fetchPermissions(dto.permissionsIds());
         Role role = roleMapper.toEntity(dto, permissions);
+        role.setTenant(tenantResolverService.resolve());
         return roleMapper.toResponseDto(roleRepository.save(role));
     }
 

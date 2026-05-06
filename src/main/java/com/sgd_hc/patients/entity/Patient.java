@@ -9,9 +9,7 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.util.Date;
-
-import static jakarta.persistence.TemporalType.DATE;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "patients")
@@ -47,7 +45,6 @@ public class Patient extends BaseEntity {
     @Column(name = "gender", columnDefinition = "gender_enum", nullable = false)
     private Gender gender;
 
-    @Temporal(DATE)
     @Column(nullable = false)
-    private Date birthDate;
+    private LocalDate birthDate;
 }

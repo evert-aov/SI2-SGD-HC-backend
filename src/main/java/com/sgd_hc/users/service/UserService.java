@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sgd_hc.tenants.service.TenantResolverService;
 import com.sgd_hc.users.dto.UserCreateDto;
 import com.sgd_hc.users.dto.UserResponseDto;
 import com.sgd_hc.users.dto.UserUpdateDto;
@@ -23,10 +24,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final UserMapper userMapper;
-    private final PasswordEncoder passwordEncoder;
+    private final UserRepository        userRepository;
+    private final RoleRepository        roleRepository;
+    private final UserMapper            userMapper;
+    private final PasswordEncoder       passwordEncoder;
+    private final TenantResolverService tenantResolverService;
 
     @Transactional
     public UserResponseDto createUser(UserCreateDto dto) {
@@ -40,6 +42,7 @@ public class UserService {
         User user = userMapper.toEntity(dto, roles);
         user.setUsername(generateUsername());
         user.setPassword(passwordEncoder.encode(dto.password()));
+        user.setTenant(tenantResolverService.resolve());
 
         return userMapper.toResponseDto(userRepository.save(user));
     }
