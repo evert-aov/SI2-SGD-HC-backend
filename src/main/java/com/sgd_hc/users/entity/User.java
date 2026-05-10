@@ -14,7 +14,9 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity(name = "users")
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = {
+    @UniqueConstraint(name = "uq_users_email_tenant", columnNames = {"tenant_id", "email"})
+})
 @SuperBuilder
 @Getter
 @Setter
@@ -22,7 +24,7 @@ import org.hibernate.type.SqlTypes;
 @AllArgsConstructor
 public class User extends BaseEntity {
 
-    @Column(nullable = false, unique = true, length = 10)
+    @Column(nullable = false, length = 50, unique = true)
     private String username;
 
     @Enumerated(EnumType.STRING)
@@ -31,10 +33,10 @@ public class User extends BaseEntity {
     @Builder.Default
     private DocumentType documentType = DocumentType.CI;
 
-    @Column(length = 10)
+    @Column(length = 20)
     private String documentNumber;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, length = 50)
     private String email;
 
     @Column(nullable = false, length = 100)

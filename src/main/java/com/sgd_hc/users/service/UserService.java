@@ -3,6 +3,7 @@ package com.sgd_hc.users.service;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import com.sgd_hc.security.config.tenant.TenantContext;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -49,9 +50,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponseDto getUserById(UUID id) {
-        return userMapper.toResponseDto(
-                userRepository.findById(id)
-                        .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id)));
+        return userMapper.toResponseDto(findOrThrow(id));
     }
 
     @Transactional(readOnly = true)
@@ -70,8 +69,7 @@ public class UserService {
 
     @Transactional
     public UserResponseDto updateUser(UUID id, UserUpdateDto dto) {
-        User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+        User existingUser = findOrThrow(id);
 
         Set<Role> roles = null;
         if (dto.rolesIds() != null)
@@ -87,19 +85,31 @@ public class UserService {
 
     @Transactional
     public void deleteUser(UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+        User user = findOrThrow(id);
         user.setIsActive(false);
         userRepository.save(user);
     }
 
-    private String generateUsername() {
-        String prefix = "USR";
-        String code;
-        do {
-            int n = (int) (Math.random() * 9000) + 1000;
-            code = prefix + "-" + n;
-        } while (userRepository.existsByUsername(code));
-        return code;
+    private User findOrThrow(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + id));
+    }
+
+    public String generateUsername() {
+        String slug = TenantContext.getCurrentTenantSlug();
+        String prefix = "usr";
+        String username;
+        
+        // Activar bypass para verificar unicidad global
+        TenantContext.setBypassFilter(true);
+        try {
+            do {
+                int n = (int) (Math.random() * 9000) + 1000;
+                username = prefix + "-" + n + (slug != null ? "." + slug : "");
+            } while (userRepository.existsByUsername(username));
+        } finally {
+            TenantContext.setBypassFilter(false);
+        }
+        return username;
     }
 }

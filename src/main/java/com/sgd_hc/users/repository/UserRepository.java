@@ -22,4 +22,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT u FROM users u")
     List<User> findAllRegularUsers();
+
+    List<User> findAllByTenantId(UUID tenantId);
 }

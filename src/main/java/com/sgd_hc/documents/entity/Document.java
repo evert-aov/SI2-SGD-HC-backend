@@ -10,9 +10,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Documento clínico del sistema.
@@ -49,6 +47,7 @@ public class Document extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 30,
             columnDefinition = "document_status_enum")
+    @Builder.Default
     private DocumentStatus status = DocumentStatus.DRAFT;
 
     @Column(name = "is_external_source", nullable = false)

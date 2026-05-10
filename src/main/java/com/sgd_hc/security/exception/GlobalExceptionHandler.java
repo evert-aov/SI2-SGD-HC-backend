@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -40,6 +41,12 @@ public class GlobalExceptionHandler {
                 .reduce((a, b) -> a + "; " + b)
                 .orElse("Datos inválidos");
         return errorBody(HttpStatus.BAD_REQUEST, "Validation Error", message, request);
+    }
+
+    @ExceptionHandler(EmptyResultDataAccessException.class)
+    public ResponseEntity<Object> handleEmptyResultDataAccessException(org.springframework.dao.EmptyResultDataAccessException ex, WebRequest request) {
+        return errorBody(HttpStatus.NOT_FOUND, "Not Found",
+                "El recurso solicitado no existe o no pertenece a tu clínica.", request);
     }
 
     @ExceptionHandler(Exception.class)
