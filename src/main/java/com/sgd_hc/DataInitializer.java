@@ -18,6 +18,8 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import com.sgd_hc.security.config.tenant.TenantContext;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -36,73 +38,114 @@ public class DataInitializer implements ApplicationRunner {
     private final PermissionRepository permissionRepository;
     private final PasswordEncoder     passwordEncoder;
 
+    @Value("${app.seed.system.slug}")     private String systemSlug;
+    @Value("${app.seed.system.name}")     private String systemName;
+    @Value("${app.seed.system.username}") private String systemUsername;
+    @Value("${app.seed.system.password}") private String systemPassword;
+    @Value("${app.seed.system.email}")    private String systemEmail;
+    @Value("${app.seed.system.firstName}")  private String systemFirstName;
+    @Value("${app.seed.system.lastName}")   private String systemLastName;
+    @Value("${app.seed.system.nationalId}") private String systemNationalId;
+
+    @Value("${app.seed.default.slug}")     private String defaultSlug;
+    @Value("${app.seed.default.name}")     private String defaultName;
+    @Value("${app.seed.default.username}") private String defaultUsername;
+    @Value("${app.seed.default.password}") private String defaultPassword;
+    @Value("${app.seed.default.email}")    private String defaultEmail;
+    @Value("${app.seed.default.firstName}")  private String defaultFirstName;
+    @Value("${app.seed.default.lastName}")   private String defaultLastName;
+    @Value("${app.seed.default.nationalId}") private String defaultNationalId;
+
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         log.info(">>> Iniciando DataInitializer...");
+        TenantContext.setBypassFilter(true);
 
-        Tenant defaultTenant = setupDefaultTenant();
+        try {
+            Tenant defaultTenant = setupDefaultTenant();
+            Tenant hqCoreTenant = tenantRepository.findBySlug(systemSlug)
+                    .orElseThrow(() -> new IllegalStateException("Tenant maestro no encontrado: " + systemSlug));
 
-        Set<Permission> allPermissions = createDefaultPermissions();
-        Set<Permission> limitedPermissions = new HashSet<>(allPermissions);
-        limitedPermissions.removeIf(p -> p.getName().endsWith("_DELETE"));
+            Set<Permission> allPermissions = createDefaultPermissions();
 
-        Map<String, String> rolesToCreate = Map.of(
-                "ROLE_SUPERUSER", "Superusuario con acceso total",
-                "ROLE_ADMIN",     "Administrador con restricciones de borrado",
-                "ROLE_MEDICO",    "Personal médico del sistema",
-                "ROLE_ARCHIVO",   "Encargado de archivo histórico",
-                "ROLE_DIRECTOR",  "Director del hospital"
-        );
+            Map<String, String> rolesToCreate = Map.of(
+                    "ROLE_SUPERUSER", "Superusuario con acceso total",
+                    "ROLE_ADMIN",     "Administrador con restricciones de borrado",
+                    "ROLE_MEDICO",    "Personal médico del sistema",
+                    "ROLE_ARCHIVO",   "Encargado de archivo histórico",
+                    "ROLE_DIRECTOR",  "Director del hospital"
+            );
 
-        for (Map.Entry<String, String> entry : rolesToCreate.entrySet()) {
-            String roleName = entry.getKey();
-            String roleDesc = entry.getValue();
+            for (Map.Entry<String, String> entry : rolesToCreate.entrySet()) {
+                String roleName = entry.getKey();
+                String roleDesc = entry.getValue();
 
-            Role role = roleRepository.findByName(roleName).orElse(null);
+                Tenant roleTenant = hqCoreTenant;
 
-            if (role == null) {
-                log.info(">>> Creando rol: {}", roleName);
-                try {
-                    role = roleRepository.saveAndFlush(Role.builder()
-                            .name(roleName)
-                            .description(roleDesc)
-                            .tenant(defaultTenant)
-                            .build());
-                } catch (Exception e) {
-                    log.warn(">>> Conflicto al crear rol {}: {}", roleName, e.getMessage());
-                    role = roleRepository.findByName(roleName).orElseThrow();
+                boolean exists = roleRepository.findByNameAndTenantId(roleName, roleTenant.getId()).isPresent();
+                if (!exists) {
+                    log.info(">>> Creando rol: {} en tenant: {}", roleName, roleTenant.getSlug());
+                    try {
+                        Role role = roleRepository.saveAndFlush(Role.builder()
+                                .name(roleName)
+                                .description(roleDesc)
+                                .tenant(roleTenant)
+                                .build());
+
+                        if (roleName.equals("ROLE_SUPERUSER")) {
+                            role.setPermissions(allPermissions);
+                            roleRepository.saveAndFlush(role);
+                        } else if (roleName.equals("ROLE_ADMIN")) {
+                            role.setPermissions(allPermissions);
+                            roleRepository.saveAndFlush(role);
+                        }
+                    } catch (Exception e) {
+                        log.warn(">>> Conflicto al crear rol {}: {}", roleName, e.getMessage());
+                    }
                 }
             }
 
-            if (roleName.equals("ROLE_SUPERUSER")) {
-                role.setPermissions(allPermissions);
-                roleRepository.saveAndFlush(role);
-            } else if (roleName.equals("ROLE_ADMIN")) {
-                role.setPermissions(limitedPermissions);
-                roleRepository.saveAndFlush(role);
-            }
+            Role superuserRole = roleRepository.findByNameAndTenantId("ROLE_SUPERUSER", hqCoreTenant.getId()).orElseThrow();
+            Role adminRole     = roleRepository.findByNameAndTenantId("ROLE_ADMIN", hqCoreTenant.getId()).orElseThrow();
+
+            setupUser(systemUsername, systemEmail, systemFirstName, systemLastName, systemPassword, DocumentType.CI, systemNationalId, superuserRole, hqCoreTenant);
+            setupUser(defaultUsername, defaultEmail, defaultFirstName, defaultLastName, defaultPassword, DocumentType.CI, defaultNationalId, adminRole,     defaultTenant);
+
+            log.info(">>> DataInitializer finalizado correctamente.");
+        } finally {
+            // HIGIENE DE CÓDIGO: Asegurar siempre la limpieza del ThreadLocal, incluso en la inicialización
+            TenantContext.clear();
         }
-
-        Role superuserRole = roleRepository.findByName("ROLE_SUPERUSER").orElseThrow();
-        Role adminRole     = roleRepository.findByName("ROLE_ADMIN").orElseThrow();
-
-        setupUser("superuser", "superuser@sgd.com", "Super",  "User",    "superuser123", DocumentType.CI, "0000000", superuserRole, defaultTenant);
-        setupUser("admin",     "admin@sgd.com",     "Admin",  "Limited", "admin123",     DocumentType.CI, "1111111", adminRole,     defaultTenant);
-
-        log.info(">>> DataInitializer finalizado correctamente.");
     }
 
+
     private Tenant setupDefaultTenant() {
-        return tenantRepository.findBySlug("default").orElseGet(() -> {
-            log.info(">>> Creando tenant por defecto...");
+        // Tenant del sistema para superadmins (acceso global, sin filtro de tenant)
+        tenantRepository.findBySlug(systemSlug).orElseGet(() -> {
+            log.info(">>> Creando tenant de sistema '{}'...", systemSlug);
             return tenantRepository.saveAndFlush(Tenant.builder()
-                    .name("Hospital Central")
-                    .slug("default")
-                    .email("admin@hospital.com")
+                    .name(systemName)
+                    .slug(systemSlug)
+                    .email(systemEmail)
                     .phone("+591-000-0000")
-                    .address("Dirección por defecto")
+                    .address("Sistema central")
                     .subscriptionPlan(SubscriptionPlan.ENTERPRISE)
+                    .subscriptionStatus(SubscriptionStatus.ACTIVE)
+                    .subscriptionStartDate(LocalDate.now())
+                    .build());
+        });
+
+        // Tenant por defecto para demo/clínica inicial
+        return tenantRepository.findBySlug(defaultSlug).orElseGet(() -> {
+            log.info(">>> Creando tenant por defecto '{}'...", defaultSlug);
+            return tenantRepository.saveAndFlush(Tenant.builder()
+                    .name(defaultName)
+                    .slug(defaultSlug)
+                    .email(defaultEmail)
+                    .phone("+591-123-4567")
+                    .address("Calle Principal #123")
+                    .subscriptionPlan(SubscriptionPlan.PRO)
                     .subscriptionStatus(SubscriptionStatus.ACTIVE)
                     .subscriptionStartDate(LocalDate.now())
                     .build());
