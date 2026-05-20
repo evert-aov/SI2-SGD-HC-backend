@@ -1,20 +1,21 @@
 steps:
+  # 1. Construir la imagen Docker
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "build"
-      - "--platform"
-      - "linux/amd64"
       - "-t"
-      - "southamerica-east1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/si2-sgd-hc-backend:$COMMIT_SHA"
+      - "gcr.io/$PROJECT_ID/github.com/informationsystem2/si2-sgd-hc-backend:$COMMIT_SHA"
       - "-f"
       - "Dockerfile.deploy"
       - "."
 
+  # 2. Subir la imagen a Artifact Registry
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "push"
-      - "southamerica-east1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/si2-sgd-hc-backend:$COMMIT_SHA"
-
+      - "gcr.io/$PROJECT_ID/github.com/informationsystem2/si2-sgd-hc-backend:$COMMIT_SHA"
+    
+  # 3. Desplegar en Cloud Run
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud
     args:
@@ -22,15 +23,19 @@ steps:
       - "deploy"
       - "si2-sgd-hc-backend"
       - "--image"
-      - "southamerica-east1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/si2-sgd-hc-backend:$COMMIT_SHA"
+      - "gcr.io/$PROJECT_ID/github.com/informationsystem2/si2-sgd-hc-backend:$COMMIT_SHA"
       - "--region"
-      - "southamerica-east1"
+      - "us-east4" 
       - "--platform"
       - "managed"
+      - "--allow-unauthenticated"
+      - "--min-instances=0"
+      - "--max-instances=5"
+      - "--port=8080"
       - "--quiet"
 
 images:
-  - "southamerica-east1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/si2-sgd-hc-backend:$COMMIT_SHA"
+  - "gcr.io/$PROJECT_ID/github.com/informationsystem2/si2-sgd-hc-backend:$COMMIT_SHA"
 
 options:
   logging: CLOUD_LOGGING_ONLY
