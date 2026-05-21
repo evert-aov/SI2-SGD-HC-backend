@@ -9,6 +9,8 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -20,8 +22,16 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+
 public class Patient extends User {
 
+    @Column(name = "phone")
+    private String phone;
+    
+    @Column(name = "address")
+    private String address;
+    
     @Column(name = "birth_date")
     private LocalDate birthDate;
 }
