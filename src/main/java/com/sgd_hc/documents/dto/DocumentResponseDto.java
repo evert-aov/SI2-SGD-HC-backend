@@ -1,3 +1,5 @@
+//src/main/java/com/sgd_hc/documents/dto/DocumentResponseDto.java
+
 package com.sgd_hc.documents.dto;
 
 import com.sgd_hc.documents.entity.DocumentStatus;
@@ -25,6 +27,7 @@ public record DocumentResponseDto(
         UUID id,
         UUID patientId,
         String patientName,
+        String patientDocumentNumber, // ← NUEVO CAMPO
         UUID uploaderId,
         String uploaderName,
         UUID templateId,
@@ -34,5 +37,5 @@ public record DocumentResponseDto(
         LocalDate issueDate,
         LocalDate expiryDate,
         String fileUrl,
-        Boolean isExternalSource
-) {}
+        Boolean isExternalSource) {
+}
