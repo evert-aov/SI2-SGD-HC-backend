@@ -9,6 +9,7 @@ import com.sgd_hc.documents.service.DocumentService;
 import com.sgd_hc.documents.service.FileStorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +27,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DocumentController {
 
-    private final DocumentService     documentService;
-    private final FileStorageService  fileStorageService;
+    private final DocumentService documentService;
+    private final FileStorageService fileStorageService;
 
     // ── Documento basado en plantilla ────────────────────────────────────────
 
@@ -113,4 +114,20 @@ public class DocumentController {
             @Valid @RequestBody ExternalDocumentRequestDto dto) {
         return new ResponseEntity<>(documentService.createExternal(dto), HttpStatus.CREATED);
     }
+
+    /*
+    @GetMapping("/api/historiales/search")
+    public ResponseEntity<Page<DocumentResponseDto>> searchHistoriales(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String nroDoc,
+            @RequestParam(required = false) DocumentStatus estado,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            @PageableDefault(size = 20, sort = "issueDate", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<DocumentResponseDto> result = documentService.searchHistoriales(
+                nombre, nroDoc, estado, fechaDesde, fechaHasta, pageable);
+        return ResponseEntity.ok(result);
+    }
+    */
 }
