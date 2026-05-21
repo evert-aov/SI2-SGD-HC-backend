@@ -73,7 +73,7 @@ public class DocumentService {
         doc.setFileUrl(dto.fileUrl());
         doc.setIssueDate(dto.issueDate());
         doc.setIsExternalSource(true);
-        doc.setStatus(DocumentStatus.COMPLETED);
+        doc.setStatus(DocumentStatus.DRAFT);
 
         // Guardamos las notas como contenido clínico simple si las hay
         if (dto.notes() != null && !dto.notes().isBlank()) {
@@ -163,9 +163,10 @@ public class DocumentService {
 
     private void validateTransition(DocumentStatus current, DocumentStatus next) {
         boolean valid = switch (current) {
-            case DRAFT             -> next == DocumentStatus.PENDING_SIGNATURE || next == DocumentStatus.COMPLETED;
-            case PENDING_SIGNATURE -> next == DocumentStatus.COMPLETED;
-            case COMPLETED         -> false;
+            case DRAFT          -> next == DocumentStatus.PENDING_REVIEW;
+            case PENDING_REVIEW -> next == DocumentStatus.REJECTED || next == DocumentStatus.FINALIZED;
+            case REJECTED       -> next == DocumentStatus.DRAFT     || next == DocumentStatus.PENDING_REVIEW;
+            case FINALIZED      -> false;
         };
         if (!valid) throw new IllegalStateException(
                 "Transición inválida: " + current + " → " + next);

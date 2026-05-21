@@ -66,4 +66,13 @@ public class Document extends BaseEntity {
 
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
+
+    /**
+     * Número de versión actual del documento. Se incrementa cada vez que
+     * {@code DocumentVersioningService} genera un snapshot inmutable en
+     * {@link com.sgd_hc.documents.entity.DocumentVersion}.
+     */
+    @Column(name = "version_number", nullable = false)
+    @Builder.Default
+    private Integer versionNumber = 1;
 }

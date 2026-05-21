@@ -98,16 +98,17 @@ public class TemplateDataSeeder {
     "Datos básicos de admisión",
     Map.of(
         "tipo_sangre", new FieldConfig(
-            SELECT, 
-            true, 
-            "Grupo Sanguíneo", 
+            SELECT,
+            true,
+            "Grupo Sanguíneo",
             1,
             Map.of(
                 "O_POS", "O Positivo",
                 "O_NEG", "O Negativo",
                 "A_POS", "A Positivo",
                 "B_POS", "B Positivo"
-            )
+            ),
+            Map.of()   // sin subSchema
         ),
         "observaciones", new FieldConfig(TEXTAREA, false, "Notas", 2)
     ),
