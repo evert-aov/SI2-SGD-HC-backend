@@ -47,7 +47,8 @@ public class DocumentMapper {
                 doc.getIssueDate(),
                 doc.getExpiryDate(),
                 doc.getFileUrl(),
-                doc.getIsExternalSource()
+                doc.getIsExternalSource(),
+                doc.getCategory()
         );
     }
 }

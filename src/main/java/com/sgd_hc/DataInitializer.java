@@ -208,7 +208,10 @@ public class DataInitializer implements ApplicationRunner {
             new String[]{"TEMPLATE_READ",     "TEMPLATES",   "READ"},
             new String[]{"TEMPLATE_CREATE",   "TEMPLATES",   "CREATE"},
             new String[]{"TEMPLATE_UPDATE",   "TEMPLATES",   "UPDATE"},
-            new String[]{"TEMPLATE_DELETE",   "TEMPLATES",   "DELETE"}
+            new String[]{"TEMPLATE_DELETE",   "TEMPLATES",   "DELETE"},
+
+            new String[]{"DICOM_READ",        "DICOM",       "READ"},
+            new String[]{"DICOM_CREATE",      "DICOM",       "CREATE"}
         );
 
         Set<String> existingNames = new HashSet<>();

@@ -1,5 +1,6 @@
 package com.sgd_hc.documents.dto;
 
+import com.sgd_hc.documents.entity.DocumentCategory;
 import com.sgd_hc.documents.entity.DocumentStatus;
 
 import java.time.LocalDate;
@@ -34,5 +35,6 @@ public record DocumentResponseDto(
         LocalDate issueDate,
         LocalDate expiryDate,
         String fileUrl,
-        Boolean isExternalSource
+        Boolean isExternalSource,
+        DocumentCategory documentCategory
 ) {}

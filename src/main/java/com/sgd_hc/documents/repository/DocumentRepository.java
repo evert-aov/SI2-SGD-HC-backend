@@ -1,6 +1,7 @@
 package com.sgd_hc.documents.repository;
 
 import com.sgd_hc.documents.entity.Document;
+import com.sgd_hc.documents.entity.DocumentCategory;
 import com.sgd_hc.documents.entity.DocumentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -45,5 +46,18 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
             @Param("tenantId") UUID tenantId,
             @Param("jsonKey")  String jsonKey,
             @Param("jsonValue") String jsonValue
+    );
+
+    // Lista todos los estudios DICOM de un paciente dentro de un tenant.
+    List<Document> findByPatientIdAndTenantIdAndCategory(
+        UUID patientId,
+        UUID tenantId,
+        DocumentCategory category
+    );
+    // Busca un estudio DICOM por su ID garantizando que pertenece al tenant
+    Optional<Document> findByIdAndTenantIdAndCategory(
+        UUID id,
+        UUID tenantId,
+        DocumentCategory category
     );
 }

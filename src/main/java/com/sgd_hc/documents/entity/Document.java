@@ -3,6 +3,7 @@ package com.sgd_hc.documents.entity;
 import com.sgd_hc.patients.entity.Patient;
 import com.sgd_hc.users.entity.BaseEntity;
 import com.sgd_hc.users.entity.User;
+import com.sgd_hc.documents.entity.DocumentCategory;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -54,6 +55,12 @@ public class Document extends BaseEntity {
     @Column(name = "is_external_source", nullable = false)
     @Builder.Default
     private Boolean isExternalSource = false;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "document_category", nullable = false, columnDefinition = "document_category_enum")
+    @Builder.Default
+    private DocumentCategory category = DocumentCategory.EXTERNAL_FILE;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "clinical_content", columnDefinition = "jsonb")
