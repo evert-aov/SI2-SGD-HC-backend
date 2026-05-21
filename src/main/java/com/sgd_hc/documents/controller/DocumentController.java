@@ -7,8 +7,11 @@ import com.sgd_hc.documents.dto.ExternalDocumentRequestDto;
 import com.sgd_hc.documents.entity.DocumentStatus;
 import com.sgd_hc.documents.service.DocumentService;
 import com.sgd_hc.documents.service.FileStorageService;
+import com.sgd_hc.documents.dto.OcrResultDto;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -112,5 +115,19 @@ public class DocumentController {
     public ResponseEntity<DocumentResponseDto> createExternal(
             @Valid @RequestBody ExternalDocumentRequestDto dto) {
         return new ResponseEntity<>(documentService.createExternal(dto), HttpStatus.CREATED);
+    }
+
+    // ── OCR ──────────────────────────────────────────────────────────────────
+
+    @PostMapping("/{id}/ocr")
+    @PreAuthorize("hasAuthority('DOCUMENT_READ')")
+    public ResponseEntity<OcrResultDto> triggerOcr(@PathVariable UUID id) {
+        return ResponseEntity.ok(documentService.processOcr(id));
+    }
+
+    @GetMapping("/{id}/ocr")
+    @PreAuthorize("hasAuthority('DOCUMENT_READ')")
+    public ResponseEntity<OcrResultDto> getOcr(@PathVariable UUID id) {
+        return ResponseEntity.ok(documentService.getOcrResult(id));
     }
 }

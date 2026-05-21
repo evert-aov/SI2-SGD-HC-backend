@@ -19,11 +19,22 @@ import com.sgd_hc.users.entity.User;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.sgd_hc.documents.dto.OcrResultDto;
+import com.sgd_hc.documents.entity.DocumentOcrMetadata;
+import com.sgd_hc.documents.repository.DocumentOcrMetadataRepository;
+import com.sgd_hc.documents.service.OcrClientService;
 
 import java.util.List;
 import java.util.UUID;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +45,11 @@ public class DocumentService {
     private final PatientRepository          patientRepository;
     private final DocumentMapper             documentMapper;
     private final TenantResolverService      tenantResolverService;
+    private final OcrClientService          ocrClientService;
+    private final DocumentOcrMetadataRepository ocrMetadataRepository;
+
+    @Value("${storage.upload-dir:uploads}")
+    private String uploadDir;
 
     // ── Documento basado en plantilla ────────────────────────────────────────
 
@@ -169,5 +185,57 @@ public class DocumentService {
         };
         if (!valid) throw new IllegalStateException(
                 "Transición inválida: " + current + " → " + next);
+    }
+
+    // ── OCR ──────────────────────────────────────────────────────────────────
+
+    @Transactional
+    public OcrResultDto processOcr(UUID documentId) {
+        Document doc = findOrThrow(documentId);
+
+        if (doc.getFileUrl() == null || doc.getFileUrl().isBlank())
+            throw new IllegalStateException("El documento no tiene archivo físico para procesar");
+
+        // Leer el archivo desde disco
+        try {
+            Path filePath = Paths.get(uploadDir)
+                    .resolve(doc.getFileUrl().replace("/uploads/", ""))
+                    .toAbsolutePath().normalize();
+            byte[] bytes = Files.readAllBytes(filePath);
+
+            String contentType = Files.probeContentType(filePath);
+            if (contentType == null) contentType = "application/octet-stream";
+
+            OcrResultDto result = ocrClientService.extract(bytes, contentType);
+
+            // Guardar o actualizar en document_ocr_metadata
+            DocumentOcrMetadata meta = ocrMetadataRepository
+                    .findByDocumentId(documentId)
+                    .orElse(DocumentOcrMetadata.builder().document(doc).build());
+
+            meta.setRawText(result.rawText());
+            meta.setConfidenceScore(result.confidenceScore());
+            meta.setPagesProcessed(result.pagesProcessed());
+            meta.setFileType(result.fileType());
+            meta.setCreatedAt(LocalDateTime.now());
+            ocrMetadataRepository.save(meta);
+
+            return result;
+        } catch (IOException e) {
+            throw new RuntimeException("No se pudo leer el archivo: " + e.getMessage());
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public OcrResultDto getOcrResult(UUID documentId) {
+        findOrThrow(documentId); // verifica que el documento exista y sea del tenant
+        DocumentOcrMetadata meta = ocrMetadataRepository
+                .findByDocumentId(documentId)
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "No hay OCR procesado para el documento: " + documentId));
+        return new OcrResultDto(
+                meta.getRawText(), meta.getDatosEstructurados(),
+                meta.getConfidenceScore(),
+                meta.getPagesProcessed(), meta.getFileType());
     }
 }
