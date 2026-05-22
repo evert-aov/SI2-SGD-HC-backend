@@ -39,4 +39,4 @@ out/
 .env
 security-test.http
 
-upload/
+uploads/
