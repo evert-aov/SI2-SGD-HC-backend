@@ -29,8 +29,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DocumentController {
 
-    private final DocumentService     documentService;
-    private final FileStorageService  fileStorageService;
+    private final DocumentService documentService;
+    private final FileStorageService fileStorageService;
 
     // ── Documento basado en plantilla ────────────────────────────────────────
 
@@ -130,4 +130,19 @@ public class DocumentController {
     public ResponseEntity<OcrResultDto> getOcr(@PathVariable UUID id) {
         return ResponseEntity.ok(documentService.getOcrResult(id));
     }
+    /*
+    @GetMapping("/api/historiales/search")
+    public ResponseEntity<Page<DocumentResponseDto>> searchHistoriales(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String nroDoc,
+            @RequestParam(required = false) DocumentStatus estado,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
+            @PageableDefault(size = 20, sort = "issueDate", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<DocumentResponseDto> result = documentService.searchHistoriales(
+                nombre, nroDoc, estado, fechaDesde, fechaHasta, pageable);
+        return ResponseEntity.ok(result);
+    }
+    */
 }

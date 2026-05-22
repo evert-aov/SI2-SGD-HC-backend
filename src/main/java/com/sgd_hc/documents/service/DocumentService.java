@@ -1,3 +1,5 @@
+//src/main/java/com/sgd_hc/documents/service/DocumentService.java
+
 package com.sgd_hc.documents.service;
 
 import com.sgd_hc.documents.dto.DocumentRequestDto;
@@ -18,6 +20,9 @@ import com.sgd_hc.tenants.service.TenantResolverService;
 import com.sgd_hc.users.entity.User;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,8 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.sgd_hc.documents.dto.OcrResultDto;
 import com.sgd_hc.documents.entity.DocumentOcrMetadata;
 import com.sgd_hc.documents.repository.DocumentOcrMetadataRepository;
-import com.sgd_hc.documents.service.OcrClientService;
-
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.io.IOException;
@@ -40,8 +44,9 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class DocumentService {
 
-    private final DocumentRepository         documentRepository;
+    private final DocumentRepository documentRepository;
     private final DocumentTemplateRepository documentTemplateRepository;
+
     private final PatientRepository          patientRepository;
     private final DocumentMapper             documentMapper;
     private final TenantResolverService      tenantResolverService;
@@ -50,7 +55,6 @@ public class DocumentService {
 
     @Value("${storage.upload-dir:uploads}")
     private String uploadDir;
-
     // ── Documento basado en plantilla ────────────────────────────────────────
 
     @Transactional
@@ -147,8 +151,10 @@ public class DocumentService {
     public DocumentResponseDto update(UUID id, DocumentUpdateDto dto) {
         Document doc = findOrThrow(id);
         doc.setIssueDate(dto.issueDate());
-        if (dto.expiryDate() != null)      doc.setExpiryDate(dto.expiryDate());
-        if (dto.clinicalContent() != null) doc.setClinicalContent(dto.clinicalContent());
+        if (dto.expiryDate() != null)
+            doc.setExpiryDate(dto.expiryDate());
+        if (dto.clinicalContent() != null)
+            doc.setClinicalContent(dto.clinicalContent());
         if (dto.status() != null && dto.status() != doc.getStatus()) {
             validateTransition(doc.getStatus(), dto.status());
             doc.setStatus(dto.status());
@@ -173,7 +179,8 @@ public class DocumentService {
 
     private User currentUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof SecurityUser su) return su.getUser();
+        if (principal instanceof SecurityUser su)
+            return su.getUser();
         throw new IllegalStateException("No se pudo determinar el usuario autenticado");
     }
 
@@ -184,8 +191,9 @@ public class DocumentService {
             case REJECTED       -> next == DocumentStatus.DRAFT     || next == DocumentStatus.PENDING_REVIEW;
             case FINALIZED      -> false;
         };
-        if (!valid) throw new IllegalStateException(
-                "Transición inválida: " + current + " → " + next);
+        if (!valid)
+            throw new IllegalStateException(
+                    "Transición inválida: " + current + " → " + next);
     }
 
     // ── OCR ──────────────────────────────────────────────────────────────────
@@ -239,4 +247,39 @@ public class DocumentService {
                 meta.getConfidenceScore(),
                 meta.getPagesProcessed(), meta.getFileType());
     }
+    /**
+     * Ejecuta una búsqueda paginada de historiales clínicos según los criterios
+     * proporcionados.
+     * <p>
+     * Este método actúa como puente entre el controlador y el repositorio,
+     * convirtiendo las entidades {@code Document} en {@code DocumentResponseDto}
+     * para su exposición en la API.
+     * </p>
+     *
+     * @param nombre     Nombre del paciente (parcial, opcional).
+     * @param nroDoc     Número de documento del paciente (opcional).
+     * @param estado     Estado del documento (opcional).
+     * @param fechaDesde Fecha de emisión mínima (opcional).
+     * @param fechaHasta Fecha de emisión máxima (opcional).
+     * @param pageable   Parámetros de paginación y orden.
+     * @return Página de DTOs de documentos.
+     */
+    
+    public Page<DocumentResponseDto> searchHistoriales(
+        String nombre,
+        String nroDoc,
+        DocumentStatus estado,
+        LocalDate fechaDesde,
+        LocalDate fechaHasta,
+        Pageable pageable) {
+
+    String estadoStr = estado != null ? estado.name() : null;
+    String fechaDesdeStr = fechaDesde != null ? fechaDesde.toString() : null;
+    String fechaHastaStr = fechaHasta != null ? fechaHasta.toString() : null;
+
+    Page<Document> documentsPage = documentRepository.searchHistoriales(
+            nombre, nroDoc, estadoStr, fechaDesdeStr, fechaHastaStr, pageable);
+
+    return documentsPage.map(documentMapper::toResponseDto);
+}
 }

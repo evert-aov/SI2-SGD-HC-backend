@@ -1,3 +1,4 @@
+//src/main/java/com/sgd_hc/documents/entity/Document.java
 package com.sgd_hc.documents.entity;
 
 import com.sgd_hc.patients.entity.Patient;
